@@ -1,4 +1,4 @@
-##Map shelters for Woman in South Africa
+## Map shelters for Woman in South Africa
 
 Uses leafletjs.
 
@@ -6,4 +6,4 @@ GPS coordinates for shelters are deliberately "off".
 
 Mapped against muncipal ward data.
 
-Data is formulated in ??????.
+Data is "cleaned" in a separate Python environment.
