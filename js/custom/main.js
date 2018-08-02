@@ -6,18 +6,62 @@ else {
 }
 
 // CTN_CENTER =  [-33.9249, 18.4241];
-
-
-
-// CONFIG
+// CONFIG (add all provinces below)
 ws.CONFIG = {
+    'EC': {
+        center: [-32.0, 27.0],
+        wardData: 'data/ECmerged.geojson',
+        shelterData: 'data/ECshelters.geojson',
+        longName: 'Eastern Cape'
+    },
+    'FS': {
+        center: [-29.0, 26.0],
+        wardData: 'data/FSmerged.geojson',
+        shelterData: 'data/FSshelters.geojson',
+        longName: 'Free State'
+    },
+    'KZN': {
+        center: [-30.57, 30.57],
+        wardData: 'data/KZNmerged.geojson',
+        shelterData: 'data/KZNshelters.geojson',
+        longName: 'KwaZulu-Natal'
+    },
+    'LIM': {
+        center: [-24.0, 29.0],
+        wardData: 'data/LIMmerged.geojson',
+        shelterData: 'data/LIMshelters.geojson',
+        longName: 'Limpopo'
+    },
+    'MP': {
+        center: [-30.57, 30.57],
+        wardData: 'data/MPmerged.geojson',
+        shelterData: 'data/MPshelters.geojson',
+        longName: 'Mpumalanga'
+    },
+    'NC': {
+        center: [-30.57, 30.57],
+        wardData: 'data/NCmerged.geojson',
+        shelterData: 'data/NCshelters.geojson',
+        longName: 'Northern Cape'
+    },
+    'NW': {
+        center: [-30.57, 30.57],
+        wardData: 'data/NWmerged.geojson',
+        shelterData: 'data/NWshelters.geojson',
+        longName: 'North West'
+    },
     'WC': {
         center: [-32.8, 20.168536735117264],
         wardData: 'data/WCmerged.geojson',
-        shelterData: 'data/WCshelters.geojson'
+        shelterData: 'data/WCshelters.geojson',
+        longName: 'Western Cape'
     }
 }
 // end CONFIG
+
+// keep track of custom controls added to the map
+ws.customControls = []
+// end keep track of custom controls added to the map
 
 
 // Event handlers registration ******************************
@@ -31,6 +75,13 @@ document.body.addEventListener('gotJsonRsrcOk',  (event) => {
 })
 
 document.getElementsByClassName("user-select__get-data")[0].addEventListener('click', (event) => {
+    
+    let autoTitle = (province, title) => {
+        if (!title) {
+            return ws.CONFIG[province].longName;
+        } else {return title;} 
+    }
+    
     event.stopPropagation();
     let province = document.getElementsByClassName('user-select__select')[0].value;
     let title = document.getElementsByClassName('user-select__input')[0].value;
@@ -40,6 +91,33 @@ document.getElementsByClassName("user-select__get-data")[0].addEventListener('cl
         ws.getJsonRsrc(ws.CONFIG.WC.shelterData, 'shelterData');
         ws.map.panTo(ws.CONFIG.WC.center);
     }
+
+    // create legends
+    let col2legend = createLegend_b(autoTitle(province, title),
+                [{img: 'img/icons8-filled-circle-16.png', label: 'Shelters for woman'}]
+            )
+
+    let col3legend = NEWcreateLegend_a('Female Population Density',
+        [   {color: '#fef0d9', low: '0', high: '2,000'},
+            {color: '#fdcc8a', low: '2,000', high: '4,000'},
+            {color: '#fc8d59', low: '4,000', high: '6,000'},
+            {color: '#e34a33', low: '6,000', high: '8,000'},
+            {color: '#b30000', low: '8,000', high: 'more'},
+        ]
+    )
+    // end create legends
+
+    // clear legends
+    for (each of ws.customControls) {
+        ws.map.removeControl(each);
+    }
+    ws.customControls = []
+    // end clear legends
+
+    // add legends to map
+    ws.customControls.push(createLegend('bottomright', [col3legend]));
+    ws.customControls.push(createLegend('bottomright', [col2legend]));
+    // end add legends to map
 })
 
 document.getElementsByClassName('user-select__toggle-zoom')[0].addEventListener('click', (event) => {
@@ -122,7 +200,6 @@ ws.getJsonRsrc  = (rsrcId, rsrcName, eventName='gotJsonRsrcOk') => {
             event.detail.data:      downloaded json file data
         }         
     */
-    console.log(rsrcId, rsrcName, eventName);
     fetch(rsrcId)
     .then(x => x.ok ? x.json() : console.log(rsrcId, ': fetch data error'))
     .then(jsonData => {
@@ -160,10 +237,11 @@ let createLegend = (pos, html) => {
     }
 
     legend.addTo(ws.map)
+    return legend;
 }
 
 let addMapTitle = (title) => {
-    let legend = L.control({position: 'topright'});
+    let legend = L.control({position: 'topleft'});
     let el = L.DomUtil.create('div', 'map-title');
 
     legend.onAdd = function (map) {
@@ -171,6 +249,7 @@ let addMapTitle = (title) => {
         return el;
     }        
     legend.addTo(ws.map);
+    return legend;
 }
 
 
@@ -199,8 +278,6 @@ let createLegend_b = (title, rows) => {
         rowsAll = rowsAll + each
     }
 
-    console.log(rowsAll);
-    
     // add legend_b div wrapper
     return `<div class="legend-b">` + heading + rowsAll + `</div>`
 }
@@ -295,39 +372,5 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
     accessToken: 'pk.eyJ1Ijoic3dhbm5zZyIsImEiOiJjamsweWEyczgwYjA5M3BvMjR2dDk0aTIwIn0.9I1LlFyhj77n1_Xgz__uTA'
 }).addTo(ws.map);
 
-// download geojson data for wards
-// ws.getJsonRsrc('data/WCmerged.geojson', 'WCmerged.geojson');
 
-// download geojson data for shelters
-// ws.getJsonRsrc('data/WCshelters.geojson', 'WCshelters.geojson');
-
-// add legend 
-/*
-createLegend_a('Female Population Density',
-    [   {color: '#fef0d9', low: '0', high: '2,000'},
-        {color: '#fdcc8a', low: '2,000', high: '4,000'},
-        {color: '#fc8d59', low: '4,000', high: '6,000'},
-        {color: '#e34a33', low: '6,000', high: '8,000'},
-        {color: '#b30000', low: '8,000', high: 'more'},
-    ]
-)
-*/
-
-b = createLegend_b('Map Legend',
-    [{img: 'img/icons8-filled-circle-16.png', label: 'Shelters for woman'}]
-)
-
-a = NEWcreateLegend_a('Female Population Density',
-    [   {color: '#fef0d9', low: '0', high: '2,000'},
-        {color: '#fdcc8a', low: '2,000', high: '4,000'},
-        {color: '#fc8d59', low: '4,000', high: '6,000'},
-        {color: '#e34a33', low: '6,000', high: '8,000'},
-        {color: '#b30000', low: '8,000', high: 'more'},
-    ]
-)
-
-addMapTitle("Western Cape Shelters For Woman")
-
-createLegend('bottomright', [a]);
-createLegend('bottomright', [b]);
 
