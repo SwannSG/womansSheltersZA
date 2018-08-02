@@ -1,0 +1,38 @@
+.legend-b {
+    letter-spacing: 1px;
+}
+
+
+.legend-b__heading {
+    font-size: 1.2rem;
+    letter-spacing: 2px; 
+    padding: 1rem 1rem;
+    padding-bottom: 0;
+    margin: 0 auto;
+}
+
+.legend-b__row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: .5rem;
+}
+
+.legend-b__figure {
+    flex-basis: 20%;
+    margin-left: 6%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 1rem;
+
+}
+
+.legend-b__label {
+    height: 3rem;
+    flex-basis: 75%;
+    padding: 1rem 1rem;
+    padding-top: 1.5rem;
+    line-height: 1;
+}

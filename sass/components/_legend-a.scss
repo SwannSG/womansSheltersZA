@@ -1,0 +1,44 @@
+.legend-a__heading {
+        font-size: 1.2rem;
+        letter-spacing: 2px; 
+        padding: .5rem 1rem;
+        padding-bottom: .5rem;
+        margin: 0 auto;
+}
+
+.legend-a__main {
+    width: 100%;
+}
+    
+.legend-a__row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: stretch;
+        margin-top: .5rem;
+}
+
+.legend-a__item-swatch {
+        flex-basis: 20%;
+        margin-left: 6%;
+        background-color: green;
+    }
+
+.legend-a__item-low,
+.legend-a__item-high {
+    height: 2rem;
+    flex-basis: 30%;
+    padding: .5rem .5rem;
+    padding-bottom: 2rem;
+}
+
+.legend-a__item-low {
+    text-align: right;
+}
+.legend-a__item-high {
+    margin-right: 6%;
+}
+
+.legend-a__item-sep {
+    padding-top: .5rem;
+}
