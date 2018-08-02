@@ -5,23 +5,50 @@ else {
     window.ws = {};
 }
 
-
-// CONSTANTS
-WC_CENTER  =  [-32.8, 20.168536735117264];    
-CTN_CENTER =  [-33.9249, 18.4241];
+// CTN_CENTER =  [-33.9249, 18.4241];
 
 
-// end CONSTANTS
+
+// CONFIG
+ws.CONFIG = {
+    'WC': {
+        center: [-32.8, 20.168536735117264],
+        wardData: 'data/WCmerged.geojson',
+        shelterData: 'data/WCshelters.geojson'
+    }
+}
+// end CONFIG
 
 
 // Event handlers registration ******************************
 document.body.addEventListener('gotJsonRsrcOk',  (event) => {
-    if (event.detail.rsrcName === 'WCmerged.geojson') {
+    if (event.detail.rsrcName === 'wardData') {
         ws.wardLayer(event.detail.data);
     }
-    if (event.detail.rsrcName === 'WCshelters.geojson') {
+    if (event.detail.rsrcName === 'shelterData') {
         ws.sheltersLayer(event.detail.data);
     }
+})
+
+document.getElementsByClassName("user-select__get-data")[0].addEventListener('click', (event) => {
+    event.stopPropagation();
+    let province = document.getElementsByClassName('user-select__select')[0].value;
+    let title = document.getElementsByClassName('user-select__input')[0].value;
+    // download correct data
+    if (province === 'WC') {
+        ws.getJsonRsrc(ws.CONFIG.WC.wardData, 'wardData');    
+        ws.getJsonRsrc(ws.CONFIG.WC.shelterData, 'shelterData');
+        ws.map.panTo(ws.CONFIG.WC.center);
+    }
+})
+
+document.getElementsByClassName('user-select__toggle-zoom')[0].addEventListener('click', (event) => {
+    // toggle zoom control
+    // check if zoomControl on map
+    if (ws.map.zoomControl._map) {
+        ws.map.zoomControl.remove()
+    } else {ws.map.zoomControl.addTo(ws.map)}
+    
 
 })
 // end Event handlers registration **************************
@@ -256,7 +283,7 @@ let createLegend_a = (title, rows, sep=' - ') => {
 
 
 ws.mapOptions = {
-    center: WC_CENTER,
+    center: ws.CONFIG.WC.center,
     zoom: 7.3               
     }
 
@@ -269,10 +296,10 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={
 }).addTo(ws.map);
 
 // download geojson data for wards
-ws.getJsonRsrc('data/WCmerged.geojson', 'WCmerged.geojson');
+// ws.getJsonRsrc('data/WCmerged.geojson', 'WCmerged.geojson');
 
 // download geojson data for shelters
-ws.getJsonRsrc('data/WCshelters.geojson', 'WCshelters.geojson');
+// ws.getJsonRsrc('data/WCshelters.geojson', 'WCshelters.geojson');
 
 // add legend 
 /*

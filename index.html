@@ -19,16 +19,24 @@
     </head>
 <body>
 
-<div class="select-data">
-    <div class="select-data__group">
-        <label for="abc123" class="select-data__label"></label>
-        <select name="province" class="select-data__input" id="abc123">
-            <option value="WC">Western Cape</option>
-            <option value="EC">Eastern Cape</option>
-        </select>
+<div class="user-select">
+    <div class="user-select__group-1">
+        <div class="user-select__group">
+            <label for="abc123" class="user-select__label">Data Source:</label>
+            <select name="data-source" class="user-select__select" id="abc123">
+                <option value="WC">Western Cape</option>
+                <option value="EC">Eastern Cape</option>
+            </select>
+        </div>
+        <div class="user-select__group">
+            <label for="abc124" class="user-select__label">Title:</label>
+            <input name="title" type="text" class="user-select__input" id="abc124">
+        </div>
+        <button class="user-select__get-data">Get Data</button>
     </div>
-    <button class="select-data__get-data">Get Data</button>
-    <button class="select-data__toggle-zoom">Toggle map zoom</button>
+    <div class="user-select__group-2">
+        <button class="user-select__toggle-zoom">Map zoom toggle </button>
+    </div>
 </div>    
 
 
