@@ -9,7 +9,7 @@ else {
 // CONFIG (add all provinces below)
 ws.CONFIG = {
     'EC': {
-        center: [-32.0, 27.0],
+        center: [-32.2977935398105, 26.66272775514364],
         wardData: 'data/ECmerged.geojson',
         shelterData: 'data/ECshelters.geojson',
         longName: 'Eastern Cape'
@@ -60,7 +60,8 @@ ws.CONFIG = {
 // end CONFIG
 
 // keep track of custom controls added to the map
-ws.customControls = []
+ws.customControls = [];
+ws.layers = {};
 // end keep track of custom controls added to the map
 
 
@@ -75,7 +76,6 @@ document.body.addEventListener('gotJsonRsrcOk',  (event) => {
 })
 
 document.getElementsByClassName("user-select__get-data")[0].addEventListener('click', (event) => {
-    
     let autoTitle = (province, title) => {
         if (!title) {
             return ws.CONFIG[province].longName;
@@ -85,15 +85,24 @@ document.getElementsByClassName("user-select__get-data")[0].addEventListener('cl
     event.stopPropagation();
     let province = document.getElementsByClassName('user-select__select')[0].value;
     let title = document.getElementsByClassName('user-select__input')[0].value;
-    // download correct data
-    if (province === 'WC') {
-        ws.getJsonRsrc(ws.CONFIG.WC.wardData, 'wardData');    
-        ws.getJsonRsrc(ws.CONFIG.WC.shelterData, 'shelterData');
-        ws.map.panTo(ws.CONFIG.WC.center);
-    }
+ 
+    // remove map layers.
+    ws.map.eachLayer((layer) => {
+        if (layer.name === 'wards' || layer.name === 'shelters') {
+            ws.map.removeLayer(layer);
+        }
+    })
+    // end remove map layers
 
-    // create legends
-    let col2legend = createLegend_b(autoTitle(province, title),
+    // download correct data
+    ws.getJsonRsrc(ws.CONFIG[province].wardData, 'wardData');    
+    ws.getJsonRsrc(ws.CONFIG.WC.shelterData, 'shelterData');
+    ws.map.panTo(ws.CONFIG[province].center);
+    // end download correct data
+
+     // create legends
+     // !!!!!
+    let col2legend = createLegend_c(autoTitle(province, title),
                 [{img: 'img/icons8-filled-circle-16.png', label: 'Shelters for woman'}]
             )
 
@@ -131,6 +140,7 @@ document.getElementsByClassName('user-select__toggle-zoom')[0].addEventListener(
 })
 // end Event handlers registration **************************
 
+
 // Custom Functions *****************************************
 let homeIcon = L.icon({
     iconUrl: 'img/icons8-filled-circle-16.png',
@@ -139,24 +149,55 @@ let homeIcon = L.icon({
     popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 
+ws.nameLayer = (layerObj, layerName) => {
+    // give a layer a name
+    if (layerObj.hasOwnProperty('name')) {
+        console.log('cannot add "name" to layer')
+    } else {layerObj.name = layerName;}
+}
 
 
 ws.sheltersLayer = (layer) => {
-    let geojsonMarkerOptions = {
-        className: 'shelter'
-    };
+    ws.NEWsheltersLayer(layer)
+    return;
     L.geoJSON(layer,  {
         pointToLayer: function(feature, latlng) {
             return L.marker(latlng, {icon: homeIcon}).bindPopup(feature.properties.name)
-            // return L.circleMarker(latlng, homeIcon);
         }
     })
     .addTo(ws.map);
 }
 
+ws.NEWsheltersLayer = (layer) => {
+    layerObj = L.geoJSON(layer, {
+        pointToLayer: function(feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: ws.map.getZoom()*0.8,
+                            fillColor: 'yellow',
+                            fillOpacity: 1,
+                            className: 'shelter-marker',
+                            color: 'black',
+                            weight: 1, 
+                        }).bindPopup(feature.properties.name); 
+        }
+    })
+    ws.nameLayer(layerObj, 'shelters');
+    layerObj.addTo(ws.map);
+    ws.layers.shelters = layerObj;
+}
+
+
+
+
 ws.wardLayer = (layer) => {
-    L.geoJSON(layer, {style: ws.styleFeature}).addTo(ws.map);
+    // layer argument: geoJSON data as json
+    layer = L.geoJSON(layer, {style: ws.styleFeature})
+    // layer: becomes a layer object
+    ws.nameLayer(layer, 'wards')
+    layer.addTo(ws.map);
+
     // Event timing issue
+    ws.layers.shelters.bringToFront();
     ws.map.on('click', ws.onMapClick);
     // end Event timing issue
 }
@@ -186,6 +227,7 @@ ws.styleFeature = (feature) => {
 ws.onMapClick = (e) => {
     console.log('Map clicked at ',  e.latlng);
 }
+
 
 // what do we do with errors ?????
 ws.getJsonRsrc  = (rsrcId, rsrcName, eventName='gotJsonRsrcOk') => {
@@ -282,6 +324,39 @@ let createLegend_b = (title, rows) => {
     return `<div class="legend-b">` + heading + rowsAll + `</div>`
 }
 
+let createLegend_c = (title, rows) => {
+    /*  rows: array of row objects
+        row:{label: string}
+        returns html string
+    */
+
+   let heading = `  <div class="legend-c__heading">
+                        <h4 class="u-center-text">${title}</h4>
+                    </div>`
+    let rowsHtml = [];
+    for (let each of rows) {
+        let each_row =  `<div class="legend-c__row">
+                            <div class=legend-c__swatch>
+                                <div class=legend-c__swatch-circle></div>
+                            </div>
+                            <div class="legend-c__label">${each.label}</div>
+                        </div>`;
+        rowsHtml.push(each_row);     
+    }
+    // assemble rowsHtml
+    let rowsAll = ``;
+    for (let each of rowsHtml) {
+        rowsAll = rowsAll + each
+    }
+
+    // add legend_c div wrapper
+    return `<div class="legend-c">` + heading + rowsAll + `</div>`
+}
+
+
+
+
+
 
 let NEWcreateLegend_a = (title, rows, sep=' - ') => {
     /*  title: text string
@@ -359,18 +434,29 @@ let createLegend_a = (title, rows, sep=' - ') => {
 // end Map Components ***************************************
 
 
+// create map ***********************************************
 ws.mapOptions = {
     center: ws.CONFIG.WC.center,
     zoom: 7.3               
     }
 
 ws.map = L.map('map').setView(ws.mapOptions.center, ws.mapOptions.zoom);
+ws.map.addEventListener('zoomend', (event) => {
+    // do something when zoom changes
+    if (ws.layers.shelters) {
+        //layerShelters object exists, apply different styling
+        ws.layers.shelters.setStyle({radius: ws.map.getZoom()*0.8});
+    }
+})
+
+
+
 L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
     id: 'mapbox.streets',
     accessToken: 'pk.eyJ1Ijoic3dhbm5zZyIsImEiOiJjamsweWEyczgwYjA5M3BvMjR2dDk0aTIwIn0.9I1LlFyhj77n1_Xgz__uTA'
 }).addTo(ws.map);
-
+// end create map *******************************************
 
 
