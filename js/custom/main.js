@@ -81,7 +81,6 @@ ws.customControls = [];
 ws.layers = {};
 // end keep a reference to a layer placed on the map
 
-
 // Document event handlers registration ******************************
 // executed when a json file has finished downloading from the server
 document.body.addEventListener('gotJsonRsrcOk',  (event) => {
@@ -136,11 +135,11 @@ document.getElementsByClassName("user-select__get-data")[0].addEventListener('cl
             )
 
     let col3legend = createLegend_a('Female Population Density',
-        [   {color: '#fef0d9', low: '0', high: '2,000'},
-            {color: '#fdcc8a', low: '2,000', high: '4,000'},
-            {color: '#fc8d59', low: '4,000', high: '6,000'},
-            {color: '#e34a33', low: '6,000', high: '8,000'},
-            {color: '#b30000', low: '8,000', high: 'more'},
+        [   {color: ws.CONFIG.COLORS.BIN_1, low: '0', high: '2,000'},
+            {color: ws.CONFIG.COLORS.BIN_2, low: '2,000', high: '4,000'},
+            {color: ws.CONFIG.COLORS.BIN_3, low: '4,000', high: '6,000'},
+            {color: ws.CONFIG.COLORS.BIN_4, low: '6,000', high: '8,000'},
+            {color: ws.CONFIG.COLORS.BIN_5, low: '8,000', high: 'more'},
         ]
     )
     // end create legends
@@ -185,7 +184,7 @@ ws.nameLayer = (layerObj, layerName) => {
 
 // NOT USED
 // use an image instead of an SVG
-// only kept as an example  
+// kept as a working example when using an image for a marker  
 ws.OLDsheltersLayer = (layer) => {
     let homeIcon = L.icon({
         iconUrl: 'img/icons8-filled-circle-16.png',
@@ -274,12 +273,35 @@ ws.onMapClick = (e) => {
 }
 
 
+ws.errorMsg = (msgText) => {
+
+    // remove error msg from DOM (UI event)
+    ws.errorMsg.closeErrorMsg = (e) => {
+        ws.errorMsg.ref.remove();
+    }
+    // end remove error msg from DOM
+
+    // show error msg in DOM
+    let innerHtml = `<p class="u-center-text">
+                        ${msgText}
+                    </p>
+                    <button class="error-msg__close" onclick= "ws.errorMsg.closeErrorMsg(event)">
+                        &#88;
+                    </button>`
+    ws.errorMsg.ref = document.createElement('div');
+    ws.errorMsg.ref.setAttribute('class', 'error-msg');
+    ws.errorMsg.ref.innerHTML = innerHtml;
+    document.body.appendChild(ws.errorMsg.ref);
+    // end show error msg in DOM
+}
+
+
 // what do we do with errors ?????
-ws.getJsonRsrc  = (rsrcId, rsrcName, eventName='gotJsonRsrcOk') => {
+ws.getJsonRsrc  = (rsrcId, rsrcName='', eventName='gotJsonRsrcOk') => {
     /*
     download json file, generate event when successfully downloaded
         rsrcId:     url of json file
-        rsrcName:   internal names for that particular json file
+        rsrcName:   user defined label that can be associated with downloaded data
         eventName:  default name is 'gotJsonRsrcOk'
     Must add associated event handler
         document.body.addEventListener('gotJsonRsrcOk', {event} {
@@ -288,7 +310,14 @@ ws.getJsonRsrc  = (rsrcId, rsrcName, eventName='gotJsonRsrcOk') => {
         }         
     */
     fetch(rsrcId)
-    .then(x => x.ok ? x.json() : console.log(rsrcId, ': fetch data error'))
+    .then(x =>  {if (x.ok) {
+                    return x.json()
+                }
+                else {
+                    let errorText = `Error downloading <span>${rsrcId}</span>. (${x.statusText} ${x.status})`; 
+                    ws.errorMsg(errorText);
+                } 
+    })
     .then(jsonData => {
         document.body.dispatchEvent(new CustomEvent(
             eventName,
