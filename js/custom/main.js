@@ -8,7 +8,6 @@ else {
 // end only one namespace "ws" for our code
 
 
-
 // CONFIG (add all provinces below) ************************
 ws.CONFIG = {
     BIN_SIZE: 2000,
@@ -19,10 +18,10 @@ ws.CONFIG = {
         BIN_4: '#e34a33',
         BIN_5: '#b30000'
     },
+    MAP_INITIAL: {latlng: [-28.58, 24.52], zoom: 6},
     'EC': {
         center: [-32.2977935398105, 26.66272775514364],
         wardData: 'data/ECmerged.geojson',
-        wardDataTopoJson: 'data/ECmerged.topojson',
         shelterData: 'data/ECshelters.geojson',
         longName: 'Eastern Cape'
     },
@@ -66,6 +65,7 @@ ws.CONFIG = {
         center: [-32.8, 20.168536735117264],
         wardData: 'data/WCmerged.geojson',
         wardDataTopoJson: 'data/WCmerged.topojson',
+        wardDataTopoJsonZip: 'data/WCmerged.topojson.zip',
         shelterData: 'data/WCshelters.geojson',
         longName: 'Western Cape'
     }
@@ -81,23 +81,77 @@ ws.customControls = [];
 ws.layers = {};
 // end keep a reference to a layer placed on the map
 
-// Document event handlers registration ******************************
-// executed when a json file has finished downloading from the server
-document.body.addEventListener('gotJsonRsrcOk',  (event) => {
+ws.jsZip = new JSZip()
+
+// EVENT HANDLERS ***********************************************************************************
+// window event handlers (not used for now)
+// window.addEventListener('load', (event) => {
+//     // the page is most certainly ready
+
+// })
+// end window event handlers
+
+
+
+
+ws.DOMContentLoaded = () => {
+
+    let createMap = () => {
+        ws.map = L.map('map').setView(ws.CONFIG.MAP_INITIAL.latlng, ws.CONFIG.MAP_INITIAL.zoom);
+        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox.streets',
+            accessToken: 'pk.eyJ1Ijoic3dhbm5zZyIsImEiOiJjamsweWEyczgwYjA5M3BvMjR2dDk0aTIwIn0.9I1LlFyhj77n1_Xgz__uTA'
+        }).addTo(ws.map);
+    }
+    
+    let resizeShelterMarkerOnZoom = () => {
+        if (ws.layers.shelters) {
+            //layerShelters object exists, apply different styling
+            ws.layers.shelters.setStyle({radius: ws.map.getZoom()*0.8});
+        }
+    }
+
+    createMap()
+ 
+    // map event handlers
+    ws.map.addEventListener('layeradd', (e) => {
+        console.log('layeradd', e.layer.name)
+    })
+
+    ws.map.addEventListener('zoomend', resizeShelterMarkerOnZoom);
+
+    ws.map.addEventListener('layeradd', (event) => {
+        if (event.layer.name==='wards') {
+            ws.layers.shelters ? ws.layers.shelters.bringToFront() : '';
+        }
+    })
+
+    ws.map.addEventListener('click', ws.onMapClick);
+    // end map event handlers
+}
+
+ws.gotJsonRsrcOk = (event) => {
     if (event.detail.rsrcName === 'wardDataGeoJson') {
-        ws.wardLayer(event.detail.data);
+        ws.wardLayerGeoJson(event.detail.data);
     }
     else if (event.detail.rsrcName === 'wardDataTopoJson') {
-        // handle topojson stuff !!!!!
+        ws.wardLayerTopoJson(event.detail.data);
     }
     else if (event.detail.rsrcName === 'shelterData') {
         ws.sheltersLayer(event.detail.data);
     }
-})
-// end
+}
 
-// executed when user clicks on "Get Data" button ***********************************************
-document.getElementsByClassName("user-select__get-data")[0].addEventListener('click', (event) => {
+ws.gotZipFileOk = (event) => {
+    if (event.detail.rsrcName === 'wardDataTopoJsonZip') {
+        ws.wardLayerTopoJson(event.detail.data);
+    }
+}
+
+
+ws.btnGetDataClicked = (event) => {
     let autoTitle = (province, title) => {
         if (!title) {
             return ws.CONFIG[province].longName;
@@ -120,10 +174,14 @@ document.getElementsByClassName("user-select__get-data")[0].addEventListener('cl
 
     // download data
     // geoJson map layer
-    ws.getJsonRsrc(ws.CONFIG[province].wardData, 'wardDataGeoJson'); 
+    // !!!!!!!
+    // ws.getJsonRsrc(ws.CONFIG[province].wardData, 'wardDataGeoJson'); 
 
     // also want a topoJson layer !!!!
     // pssoible also want a compressed topoJson layer !!!!
+    // ws.getJsonRsrc(ws.CONFIG[province].wardDataTopoJson, 'wardDataTopoJson');
+
+    ws.getZipFile(ws.CONFIG[province].wardDataTopoJsonZip, 'wardDataTopoJsonZip');
 
     ws.getJsonRsrc(ws.CONFIG.WC.shelterData, 'shelterData');
     ws.map.panTo(ws.CONFIG[province].center);
@@ -155,20 +213,43 @@ document.getElementsByClassName("user-select__get-data")[0].addEventListener('cl
     ws.customControls.push(createLegend('bottomright', [col3legend]));
     ws.customControls.push(createLegend('bottomright', [col2legend]));
     // end add legends to map
+}
+
+// document event handlers
+document.addEventListener('DOMContentLoaded', (event) => {
+    ws.DOMContentLoaded();
 })
-// end executed when user clicks on "Get Data" button ***************************************
+
+// executed when a json file has finished downloading from the server
+document.body.addEventListener('gotJsonRsrcOk',  (event) => {
+    ws.gotJsonRsrcOk(event);
+})
+
+document.body.addEventListener('gotZipFileOk',  (event) => {
+    ws.gotZipFileOk(event);
+})
+
+
+// executed when user clicks on "Get Data" button ***********************************************
+document.getElementsByClassName("user-select__get-data")[0].addEventListener('click', (event) => {
+    ws.btnGetDataClicked(event);
+})
+
+ws.toggleMapZoomControlDisplay = () => {
+    if (ws.map.zoomControl._map) {
+        ws.map.zoomControl.remove()
+    } else {ws.map.zoomControl.addTo(ws.map)}
+}
 
 
 // executed when user clicks on "Map zoom toggle" button
 document.getElementsByClassName('user-select__toggle-zoom')[0].addEventListener('click', (event) => {
-    // toggle zoom control
-    // check if zoomControl on map
-    if (ws.map.zoomControl._map) {
-        ws.map.zoomControl.remove()
-    } else {ws.map.zoomControl.addTo(ws.map)}
+    ws.toggleMapZoomControlDisplay()
 })
-// end
-// end document event handlers registration ************************************************
+// END EVENT HANDLERS
+
+
+
 
 
 // Custom Functions *****************************************
@@ -227,22 +308,26 @@ ws.sheltersLayer = (layer) => {
 
 
 // create and add wardLayer from geoJson data
-ws.wardLayer = (layer) => {
+ws.wardLayerGeoJson = (layer) => {
     // layer argument: geoJSON data as json
     layer = L.geoJSON(layer, {style: ws.styleFeature})
     // layer: becomes a layer object
-    
     // name the layer
     ws.nameLayer(layer, 'wards')
     // add layer to map
     layer.addTo(ws.map);
-
-    // Event timing issue NOTE!
-    ws.layers.shelters.bringToFront();
-    ws.map.on('click', ws.onMapClick);
-    // end Event timing issue
 }
 
+let gl;
+ws.wardLayerTopoJson = (data) => {
+    // data: topoJSON
+    gl = data;
+    let key = Object.keys(data.objects)[0]
+    let geojson = topojson.feature(data, data.objects[key]);
+    layer = L.geoJSON(geojson, {style: ws.styleFeature})
+    ws.nameLayer(layer, 'wards')
+    layer.addTo(ws.map);
+}
 
 
 // used to style ward areas with fill color based on female population size
@@ -269,7 +354,7 @@ ws.styleFeature = (feature) => {
 // end
 
 ws.onMapClick = (e) => {
-    console.log('Map clicked at ',  e.latlng);
+    console.log('Map clicked at: ',  e.latlng, 'zoom: ', ws.map.getZoom());
 }
 
 
@@ -295,8 +380,43 @@ ws.errorMsg = (msgText) => {
     // end show error msg in DOM
 }
 
+ws.getZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
+    fetch(rsrcId)
+    .then(x =>  {if (x.ok) {
+        return x;
+    }
+    else {
+        let errorText = `Error downloading <span>${rsrcId}</span>. (${x.statusText} ${x.status})`; 
+        ws.errorMsg(errorText);
+    } 
+    })
+    .then(x => {
+        return ws.jsZip.loadAsync(x.arrayBuffer())
+    })
+    .then(x => {
+        let b = x.file('WCmerged.topojson')
+        return b.async('string')
+    })
+    .then(x => {
+        return JSON.parse(x);
+    })
+    .then(x => {
+        document.body.dispatchEvent(new CustomEvent(
+            eventName,
+            {detail: {
+                rsrcName: rsrcName, 
+                data: x
+                }
+            }));
+    })
+    .catch(err => {
+        console.log(err);
+    })
+}
 
-// what do we do with errors ?????
+
+
+
 ws.getJsonRsrc  = (rsrcId, rsrcName='', eventName='gotJsonRsrcOk') => {
     /*
     download json file, generate event when successfully downloaded
@@ -327,7 +447,11 @@ ws.getJsonRsrc  = (rsrcId, rsrcName='', eventName='gotJsonRsrcOk') => {
                 }
             }));
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+        console.log(err);
+        let errorText = `Error downloading <span>${rsrcId}</span>.`; 
+        ws.errorMsg(errorText);
+    });
 } 
 // end Custom Functions *************************************
 
@@ -473,36 +597,3 @@ let createLegend_a = (title, rows, sep=' - ') => {
     return heading + rowsAll;
 }
 // end
-
-
-
-
-// end Map Components ***************************************
-
-
-// create map ***********************************************
-ws.mapOptions = {
-    center: ws.CONFIG.WC.center,
-    zoom: 7.3               
-    }
-
-ws.map = L.map('map').setView(ws.mapOptions.center, ws.mapOptions.zoom);
-ws.map.addEventListener('zoomend', (event) => {
-    // do something when zoom changes
-    if (ws.layers.shelters) {
-        //layerShelters object exists, apply different styling
-        ws.layers.shelters.setStyle({radius: ws.map.getZoom()*0.8});
-    }
-})
-
-
-
-L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
-    id: 'mapbox.streets',
-    accessToken: 'pk.eyJ1Ijoic3dhbm5zZyIsImEiOiJjamsweWEyczgwYjA5M3BvMjR2dDk0aTIwIn0.9I1LlFyhj77n1_Xgz__uTA'
-}).addTo(ws.map);
-// end create map *******************************************
-
-
