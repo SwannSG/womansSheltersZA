@@ -151,7 +151,27 @@ ws.gotZipFileOk = (event) => {
 }
 
 
+
+
+
 ws.btnGetDataClicked = (event) => {
+
+    /*
+        check if resource exists on server.
+        return promise, resolves to true|false
+    */
+    let checkIfRsrcExists = (rsrcId) => {
+        return new Promise( (resolve, reject) => {
+            fetch(rsrcId, {method: 'HEAD', cache: 'no-cache'})
+            .then(x => {
+                resolve(x.ok);
+            })
+            .catch(err => {reject(err)})
+            }
+        )}
+    
+
+
     let autoTitle = (province, title) => {
         if (!title) {
             return ws.CONFIG[province].longName;
@@ -172,20 +192,40 @@ ws.btnGetDataClicked = (event) => {
     })
     // end remove map layers
 
-    // download data
-    // geoJson map layer
-    // !!!!!!!
-    // ws.getJsonRsrc(ws.CONFIG[province].wardData, 'wardDataGeoJson'); 
+    /* 
+    We can download ward data in 3 formats
+        1. geoJson              largest size        least prefered
+        2. topoJson             medium size         medium prefered
+        3. zipped topoJson      smallest size       most prefered
+    */
 
-    // also want a topoJson layer !!!!
-    // pssoible also want a compressed topoJson layer !!!!
-    // ws.getJsonRsrc(ws.CONFIG[province].wardDataTopoJson, 'wardDataTopoJson');
-
-    ws.getZipFile(ws.CONFIG[province].wardDataTopoJsonZip, 'wardDataTopoJsonZip');
+    let promises = [
+        checkIfRsrcExists(ws.CONFIG[province].wardDataTopoJsonZip),
+        checkIfRsrcExists(ws.CONFIG[province].wardDataTopoJson),
+        checkIfRsrcExists(ws.CONFIG[province].wardData)
+    ]
+    Promise.all(promises)
+        .then(x => {
+            if (x[0]) {
+                // zip
+                ws.getJsonZipFile(ws.CONFIG[province].wardDataTopoJsonZip, 'wardDataTopoJsonZip');
+            }
+            else if (x[1]) {
+                // topo
+                ws.getJsonRsrc(ws.CONFIG[province].wardDataTopoJson, 'wardDataTopoJson');
+            }
+            else if (x[2]) {
+                // geo
+                ws.getJsonRsrc(ws.CONFIG[province].wardData, 'wardDataGeoJson');
+            }
+            else {
+                console.log('No such data !!!!!!!!!!')
+            }
+        }) 
+        .catch(err => {console.log(err)});
 
     ws.getJsonRsrc(ws.CONFIG.WC.shelterData, 'shelterData');
     ws.map.panTo(ws.CONFIG[province].center);
-    // end download correct data
 
      // create legends
     let col2legend = createLegend_c(autoTitle(province, title),
@@ -380,9 +420,11 @@ ws.errorMsg = (msgText) => {
     // end show error msg in DOM
 }
 
-ws.getZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
+ws.getJsonZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
     fetch(rsrcId)
     .then(x =>  {if (x.ok) {
+        // x: Response (from server)
+
         return x;
     }
     else {
@@ -391,13 +433,18 @@ ws.getZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
     } 
     })
     .then(x => {
+        // x.arrayBuffer: raw data of the zip file
         return ws.jsZip.loadAsync(x.arrayBuffer())
     })
     .then(x => {
-        let b = x.file('WCmerged.topojson')
-        return b.async('string')
+        // x: jsZip data structure
+        //      x.files = {<filename_1>:{} , <filename_2>:{}, ...}
+        //          we only have one filename which we get from Object.keys(x.files)[0] 
+        //      originalFileData (as string) = x.file(<filename>).async('string') 
+        return x.file(Object.keys(x.files)[0]).async('string')
     })
     .then(x => {
+        // x: string representation of original JSON, which needs to be parsed 
         return JSON.parse(x);
     })
     .then(x => {
@@ -411,6 +458,8 @@ ws.getZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
     })
     .catch(err => {
         console.log(err);
+        let errorText = `Error downloading <span>${rsrcId}</span>.`; 
+        ws.errorMsg(errorText);
     })
 }
 
