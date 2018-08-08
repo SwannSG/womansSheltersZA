@@ -19,45 +19,75 @@ ws.CONFIG = {
         BIN_5: '#b30000'
     },
     MAP_INITIAL: {latlng: [-28.58, 24.52], zoom: 6},
+    'ALL': {
+        center: [-32.2977935398105, 26.66272775514364],
+        wardData: 'data/ALLmerged.geojson',
+        wardDataTopoJson: 'data/ALLmerged.topojson',
+        wardDataTopoJsonZip: 'data/ALLmerged.topojson.zip',
+        shelterData: 'data/ALLshelters.geojson',
+        longName: 'All Provinces'
+    },
     'EC': {
         center: [-32.2977935398105, 26.66272775514364],
         wardData: 'data/ECmerged.geojson',
+        wardDataTopoJson: 'data/ECmerged.topojson',
+        wardDataTopoJsonZip: 'data/ECmerged.topojson.zip',
         shelterData: 'data/ECshelters.geojson',
         longName: 'Eastern Cape'
     },
     'FS': {
         center: [-29.0, 26.0],
         wardData: 'data/FSmerged.geojson',
+        wardDataTopoJson: 'data/FSmerged.topojson',
+        wardDataTopoJsonZip: 'data/FSmerged.topojson.zip',
         shelterData: 'data/FSshelters.geojson',
         longName: 'Free State'
+    },
+    'GT': {
+        center: [-29.0, 26.0],
+        wardData: 'data/GTmerged.geojson',
+        wardDataTopoJson: 'data/GTmerged.topojson',
+        wardDataTopoJsonZip: 'data/GTmerged.topojson.zip',
+        shelterData: 'data/GTshelters.geojson',
+        longName: 'Gauteng'
     },
     'KZN': {
         center: [-30.57, 30.57],
         wardData: 'data/KZNmerged.geojson',
+        wardDataTopoJson: 'data/KZNmerged.topojson',
+        wardDataTopoJsonZip: 'data/KZNmerged.topojson.zip',
         shelterData: 'data/KZNshelters.geojson',
         longName: 'KwaZulu-Natal'
     },
     'LIM': {
         center: [-24.0, 29.0],
         wardData: 'data/LIMmerged.geojson',
+        wardDataTopoJson: 'data/LIMmerged.topojson',
+        wardDataTopoJsonZip: 'data/LIMmerged.topojson.zip',
         shelterData: 'data/LIMshelters.geojson',
         longName: 'Limpopo'
     },
     'MP': {
         center: [-30.57, 30.57],
         wardData: 'data/MPmerged.geojson',
+        wardDataTopoJson: 'data/MPmerged.topojson',
+        wardDataTopoJsonZip: 'data/MPmerged.topojson.zip',
         shelterData: 'data/MPshelters.geojson',
         longName: 'Mpumalanga'
     },
     'NC': {
         center: [-30.57, 30.57],
         wardData: 'data/NCmerged.geojson',
+        wardDataTopoJson: 'data/NCmerged.topojson',
+        wardDataTopoJsonZip: 'data/NCmerged.topojson.zip',
         shelterData: 'data/NCshelters.geojson',
         longName: 'Northern Cape'
     },
     'NW': {
         center: [-30.57, 30.57],
         wardData: 'data/NWmerged.geojson',
+        wardDataTopoJson: 'data/NWmerged.topojson',
+        wardDataTopoJsonZip: 'data/NWmerged.topojson.zip',
         shelterData: 'data/NWshelters.geojson',
         longName: 'North West'
     },
@@ -80,8 +110,6 @@ ws.customControls = [];
 // ws.layer.name 
 ws.layers = {};
 // end keep a reference to a layer placed on the map
-
-ws.jsZip = new JSZip()
 
 // EVENT HANDLERS ***********************************************************************************
 // window event handlers (not used for now)
@@ -224,7 +252,7 @@ ws.btnGetDataClicked = (event) => {
         }) 
         .catch(err => {console.log(err)});
 
-    ws.getJsonRsrc(ws.CONFIG.WC.shelterData, 'shelterData');
+    ws.getJsonRsrc(ws.CONFIG[province].shelterData, 'shelterData');
     ws.map.panTo(ws.CONFIG[province].center);
 
      // create legends
@@ -232,7 +260,7 @@ ws.btnGetDataClicked = (event) => {
                 [{img: 'img/icons8-filled-circle-16.png', label: 'Shelters for woman'}]
             )
 
-    let col3legend = createLegend_a('Female Population Density',
+    let col3legend = createLegend_a('Females, 18 Years And Older, Population Density',
         [   {color: ws.CONFIG.COLORS.BIN_1, low: '0', high: '2,000'},
             {color: ws.CONFIG.COLORS.BIN_2, low: '2,000', high: '4,000'},
             {color: ws.CONFIG.COLORS.BIN_3, low: '4,000', high: '6,000'},
@@ -358,10 +386,8 @@ ws.wardLayerGeoJson = (layer) => {
     layer.addTo(ws.map);
 }
 
-let gl;
 ws.wardLayerTopoJson = (data) => {
     // data: topoJSON
-    gl = data;
     let key = Object.keys(data.objects)[0]
     let geojson = topojson.feature(data, data.objects[key]);
     layer = L.geoJSON(geojson, {style: ws.styleFeature})
@@ -421,10 +447,12 @@ ws.errorMsg = (msgText) => {
 }
 
 ws.getJsonZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
+
+    let jsZip = new JSZip();
+
     fetch(rsrcId)
     .then(x =>  {if (x.ok) {
         // x: Response (from server)
-
         return x;
     }
     else {
@@ -434,13 +462,15 @@ ws.getJsonZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
     })
     .then(x => {
         // x.arrayBuffer: raw data of the zip file
-        return ws.jsZip.loadAsync(x.arrayBuffer())
+        return jsZip.loadAsync(x.arrayBuffer())
     })
     .then(x => {
         // x: jsZip data structure
         //      x.files = {<filename_1>:{} , <filename_2>:{}, ...}
         //          we only have one filename which we get from Object.keys(x.files)[0] 
-        //      originalFileData (as string) = x.file(<filename>).async('string') 
+        //      originalFileData (as string) = x.file(<filename>).async('string')
+        console.log('x.files[0]')
+        console.log(Object.keys(x.files)[0])
         return x.file(Object.keys(x.files)[0]).async('string')
     })
     .then(x => {
