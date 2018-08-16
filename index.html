@@ -10,51 +10,30 @@
 
         <script src="js/libraries/leaflet1.3.3/leaflet-src.js"></script>
         <script src="js/libraries/topojson3.0.2/topojson.min.js"></script>
-        <script src="js/libraries/jszip/jszip.min.js"></script> -->
+        <script src="js/libraries/jszip/jszip.min.js"></script>
         <link rel="stylesheet" href="css/style.css" type="text/css">
 
    <title>Womans Shelters</title>
     </head>
 <body>
 
-  <div class="user-select">
-    <div class="user-select__group-1">
-        <div class="user-select__group">
-            <label for="abc123" class="user-select__label">Data Source:</label>
-            <select name="data-source" class="user-select__select" id="abc123">
-                <option value="ALL">All Provinces</option>
-                <option value="EC">Eastern Cape</option>
-                <option value="FS">Free Sate</option>
-                <option value="GT">Gauteng</option>
-                <option value="KZN">KwaZulu-Natal</option>
-                <option value="LIM">Limpopo</option>
-                <option value="MP">Mpumalanga</option>
-                <option value="NC">Northern Cape</option>
-                <option value="NW">North West</option>
-                <option value="WC">Western Cape</option>
-            </select>
-        </div>
-        <div class="user-select__group">
-            <label for="abc124" class="user-select__label">Title:</label>
-            <input name="title" type="text" class="user-select__input" id="abc124">
-        </div>
-        <button class="user-select__get-data">Get Data
-            <i class="user-select__get-data-spinner fa fa-spinner fa-spin"></i>
-        </button>
+<div class="vertical-menu">
+    <div class="vertical-menu__hamburger">
+        &#9776;
     </div>
-    <div class="user-select__group-2">
-        <button class="user-select__toggle-zoom">Map zoom toggle </button>
+    <div class="vertical-menu__magnifying-glass">
+        &#128269;
     </div>
-</div>    
+</div>
 
 
 <div class="main">
     <div id="map"></div>
 </div>
 
-    <!-- order is important -->
     <script type="text/javascript" src="js/custom/initialise.js"></script>
     <script type="text/javascript" src="js/custom/modules/UIselector.js"></script>
+    <script type="text/javascript" src="js/custom/modules/hamburger.js"></script>
     <script type="text/javascript" src="js/custom/main.js"></script> 
 </body>
 </html>

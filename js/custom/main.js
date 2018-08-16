@@ -114,6 +114,11 @@ ws.layers = {};
 
 ws.DOMContentLoaded = () => {
 
+    document.getElementsByClassName('vertical-menu__hamburger')[0].addEventListener('click', (event) => {
+        ws.hamburgerClicked(event);
+    })
+
+
     let createMap = () => {
         ws.map = L.map('map').setView(ws.CONFIG.MAP_INITIAL.latlng, ws.CONFIG.MAP_INITIAL.zoom);
         L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
@@ -148,6 +153,9 @@ ws.DOMContentLoaded = () => {
 
     ws.map.addEventListener('click', ws.onMapClick);
     // end map event handlers
+
+
+
 }
 
 ws.gotJsonRsrcOk = (event) => {
@@ -296,9 +304,9 @@ document.body.addEventListener('gotZipFileOk',  (event) => {
 
 
 // executed when user clicks on "Get Data" button ***********************************************
-document.getElementsByClassName("user-select__get-data")[0].addEventListener('click', (event) => {
-    ws.btnGetDataClicked(event);
-})
+// document.getElementsByClassName("user-select__get-data")[0].addEventListener('click', (event) => {
+//     ws.btnGetDataClicked(event);
+// })
 
 ws.toggleMapZoomControlDisplay = () => {
     if (ws.map.zoomControl._map) {
@@ -308,7 +316,7 @@ ws.toggleMapZoomControlDisplay = () => {
 
 
 // executed when user clicks on "Map zoom toggle" button
-document.getElementsByClassName('user-select__toggle-zoom')[0].addEventListener('click', (event) => {
+document.getElementsByClassName('vertical-menu__magnifying-glass')[0].addEventListener('click', (event) => {
     ws.toggleMapZoomControlDisplay()
 })
 // END EVENT HANDLERS

@@ -1,7 +1,8 @@
-// NEW
+// UI to select layers
+
 ws.UIdata = [
     {"selectorType": "dropDownList",
-     "selectorLabel": "Ward Data",
+     "selectorLabel": "Ward Data for all skaaps",
      "dropdownList": [
         { "resource": {"id": "data/<file_to_get>",
                         "display": "shows in drop down",
@@ -16,35 +17,57 @@ ws.UIdata = [
                         "legendTitle": "Eastern Cape woman's shelters"}
         }
      ]},
+     {"selectorType": "dropDownList",
+     "selectorLabel": "Courts",
+     "dropdownList": [
+        { "resource": {"id": "data/<file_to_get>",
+                        "display": "Western Cape",
+                        "legendTitle": "Western Cape courts"}
+        }
+     ]},
 ] 
 
-
-ws.createUI_1 = (uidata, index) => {
-
+let gt;
+ws.createUserSelect = (uidata) =>  {
     let el = document.createElement('div');
-    el.setAttribute('class', "user-select__group-1");
+    el.setAttribute('class', 'user-select');
+    el.setAttribute('style', 'display: none;')
     el.addEventListener('change', (event) => {
         let inputTextId = event.target.options[event.target.selectedIndex].getAttribute('data-input-id');
         let defaultInputTextValue = event.target.options[event.target.selectedIndex].getAttribute('data-legend');
         document.getElementById(inputTextId).value = defaultInputTextValue;
     });
 
+    let elements = ws.createUI_1(uidata);
+    gt = elements;
+    for (let each of elements) {
+        el.appendChild(each);
+    }
+    return el;
+}
 
-    result = ``;
+ws.createUI_1 = (uidata) => {
 
+    let elements = [];
+    let result = ``;
+    let el;
     for (let [i, each] of uidata.entries()) {
+        el = document.createElement('div');
+        el.setAttribute('class', "user-select__group-1");
         let dropdown = ws.createDropdown(each, i);
         let legend = ws.createLegendTitle(each, i);
-        let selectGroup =   `<div class="user-select__group">
+        let selectGroup =   `<div class="user-select__dropdown">
                                 ${dropdown}
                             </div>
-                            <div class="user-select__group">
+                            <div class="user-select__legend">
                                 ${legend}
                             </div>`
         result = result + selectGroup
+        el.innerHTML = result;
+        elements.push(el);
+        result = ``;
     }
-    el.innerHTML = result;
-    return el; 
+    return elements;
 }
 
 ws.createDropdown = (x, index) => {
@@ -53,7 +76,7 @@ ws.createDropdown = (x, index) => {
     let label =     `<label for="select-${index}" class="user-select__label">${x.selectorLabel}:</label>`;
     let select =    `<select name="data-source" class="user-select__select" id="select-${index}">
                         ${dropdownListHtml}
-                    </select`;
+                    </select>`;
      return label + select
 }
 
@@ -72,15 +95,12 @@ ws.createDropdownList = (x, index) => {
 
 ws.createLegendTitle = (x, index) => {
     // x UIdata[n] obj, index int
-    console.log('aaa', x.dropdownList.legendTitle);
-    let result =    `<div class="user-select__group">
-                        <label for="text-${index}" class="user-select__label">Legend title:</label>
-                        <input name="title" type="text" class="user-select__input" id="text-${index}">
-                    </div>`
+    let result =    `<label for="text-${index}" class="user-select__label">Legend title:</label>
+                     <input name="title" type="text" class="user-select__input" id="text-${index}">`
     return result;
 }
 
 
 
-el = ws.createUI_1(ws.UIdata);
-document.body.appendChild(el);
+ref = document.getElementsByClassName('main')[0]
+document.body.insertBefore(ws.createUserSelect(ws.UIdata), ref);
