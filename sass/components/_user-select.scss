@@ -41,7 +41,12 @@
         font-size: 1rem;
     }
 
+    &__get-data-spinner {
+        display: none;
+    }
+
     &__toggle-zoom {
         margin-right: 1rem;;
     }
 }
+

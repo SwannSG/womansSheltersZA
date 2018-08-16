@@ -1,13 +1,3 @@
-// only one namespace "ws" for our code
-if ('ws' in window) {
-    console.log('Namespace "ws" already exists');
-}
-else {
-    window.ws = {};
-}
-// end only one namespace "ws" for our code
-
-
 // CONFIG (add all provinces below) ************************
 ws.CONFIG = {
     BIN_SIZE: 2000,
@@ -173,13 +163,12 @@ ws.gotJsonRsrcOk = (event) => {
 }
 
 ws.gotZipFileOk = (event) => {
+    // turn spinner off
+    document.getElementsByClassName('user-select__get-data-spinner')[0].removeAttribute('style')
     if (event.detail.rsrcName === 'wardDataTopoJsonZip') {
         ws.wardLayerTopoJson(event.detail.data);
     }
 }
-
-
-
 
 
 ws.btnGetDataClicked = (event) => {
@@ -188,7 +177,12 @@ ws.btnGetDataClicked = (event) => {
         check if resource exists on server.
         return promise, resolves to true|false
     */
-    let checkIfRsrcExists = (rsrcId) => {
+    
+    // turn spinner on
+    document.getElementsByClassName('user-select__get-data-spinner')[0].setAttribute('style',
+     "display: inline-block;");
+    
+     let checkIfRsrcExists = (rsrcId) => {
         return new Promise( (resolve, reject) => {
             fetch(rsrcId, {method: 'HEAD', cache: 'no-cache'})
             .then(x => {
@@ -247,10 +241,12 @@ ws.btnGetDataClicked = (event) => {
                 ws.getJsonRsrc(ws.CONFIG[province].wardData, 'wardDataGeoJson');
             }
             else {
-                console.log('No such data !!!!!!!!!!')
+                console.log('No such data !!!!!!!!!!');
             }
         }) 
-        .catch(err => {console.log(err)});
+        .catch(err => {
+            console.log(err)
+        });
 
     ws.getJsonRsrc(ws.CONFIG[province].shelterData, 'shelterData');
     ws.map.panTo(ws.CONFIG[province].center);
@@ -287,6 +283,7 @@ ws.btnGetDataClicked = (event) => {
 document.addEventListener('DOMContentLoaded', (event) => {
     ws.DOMContentLoaded();
 })
+
 
 // executed when a json file has finished downloading from the server
 document.body.addEventListener('gotJsonRsrcOk',  (event) => {
@@ -414,7 +411,7 @@ ws.styleFeature = (feature) => {
         fillOpacity: .7,
         weight: 1,
         opacity: .8,
-        color: 'lighgray',
+        color: 'black',
     }
 }
 // end
@@ -469,8 +466,6 @@ ws.getJsonZipFile = (rsrcId, rsrcName='', eventName='gotZipFileOk') => {
         //      x.files = {<filename_1>:{} , <filename_2>:{}, ...}
         //          we only have one filename which we get from Object.keys(x.files)[0] 
         //      originalFileData (as string) = x.file(<filename>).async('string')
-        console.log('x.files[0]')
-        console.log(Object.keys(x.files)[0])
         return x.file(Object.keys(x.files)[0]).async('string')
     })
     .then(x => {
@@ -676,3 +671,4 @@ let createLegend_a = (title, rows, sep=' - ') => {
     return heading + rowsAll;
 }
 // end
+
